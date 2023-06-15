@@ -91,6 +91,13 @@
         };
         const distance = haversineDistance(a, b);
         document.getElementById("distanceField").placeholder = "" + Math.round(distance/1000);
+        resetForm();
+      }
+      function resetForm(){
+        document.getElementById("alatitude").value = "00.0000";
+        document.getElementById("alongitude").value = "000.0000";
+        document.getElementById("blatitude").value = "00.0000";
+        document.getElementById("blongitude").value = "000.0000";
       }
       function roundFourPlaces(num){
         return Math.round(num * 10000)/10000;
