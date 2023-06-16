@@ -13,12 +13,22 @@
       #coordinates h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
       #coordinates h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
       #coordinates p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #coordinates a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #coordinates, #coordinates a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      button { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 12px; border-radius: 4px; }
+      #coordinates, #coordinates a, button { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
       #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
       @media (max-width: 600px) {
         body, #coordinates { margin-top: 0; background: white; box-shadow: none; }
         body { border-top: 16px solid #ffa100; }
+      }
+      #alat, #blat {
+        margin-left: 4.01px;
+      }
+      #switchForm button {
+        padding: 0 !important;
+      }
+      #switch {
+        margin: 0px !important;
+        font-size: 12px;
       }
       #map {
         height: 400px;
@@ -27,30 +37,38 @@
         max-height: 100vw;
         margin:auto;
       }
+      #coordForm button, #addForm button {
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
     </style>
   </head>
   <body>
     <div id="coordinates">
       <h2>Get the distance from two points on Earth</h2>
-      <h1>Input your coordinates in decimal form</h1>
+      <form id = "switchInputs">
+        <button type = "submit" id = "switchButton"><h6 id = "switch">Switch to Address</h6></button>
+      </form>
       <form id = "coordForm">
+        <h1>Input your coordinates in decimal form</h1>
         <p>First Coordinate</p>
-        <label for = "alat"></label>
-        <input type = "text" name = "alat" id = "alat" placeholder="00.0000" required>
-        <label for = "alon"></label>
+        <label for = "alat">Lat</label>
+        <input type = "text" name = "alat" id = "alat" placeholder="00.0000" required><br>
+        <label for = "alon">Lon</label>
         <input type = "text" name = "alon" id = "alon" placeholder="000.0000" required>
         <p>Second Coordinate</p>
-        <label for = "blat"></label>
-        <input type = "text" name = "blat" id = "blat" placeholder="00.0000" required>
-        <label for = "blon"></label>
-        <input type = "text" name = "blon" id = "blon" placeholder="000.0000" required>
+        <label for = "blat">Lat</label>
+        <input type = "text" name = "blat" id = "blat" placeholder="00.0000" required><br>
+        <label for = "blon">Lon</label>
+        <input type = "text" name = "blon" id = "blon" placeholder="000.0000" required><br>
         <button type = "submit" id = "coordButton">Submit</button>
       </form>
-      <form id = "addForm">
-        <label for = "address1">Put in the first address</label>
-        <input id="address1" type="textbox" name="address1">
-        <label for = "address2">Put in the second address</label>
-        <input id="address2" type="textbox" name="address2">
+      <form id = "addForm" style="display: none;">
+        <h1>Use Addresses to get distance</h1>
+        <label for = "address1">Put in the first address</label><br>
+        <input id="address1" type="textbox" name="address1"><br>
+        <label for = "address2">Put in the second address</label><br>
+        <input id="address2" type="textbox" name="address2"><br>
         <button type = "submit" id = "addButton">Submit</button>
       </form>
       <h2>Distance in kilometers</h2>
@@ -86,6 +104,8 @@
       let map;
       let markers = [];
       let geocoder;
+      const regexLat = new RegExp("^-?([0-8]?[0-9]|90)(\.[0-9]{1,10})?$");
+      const regexLng = new RegExp("^-?([0-9]{1,2}|1[0-7][0-9]|180)(\.[0-9]{1,10})?$");
       async function initMap() {
         geocoder = new google.maps.Geocoder();
         map = await new Map(document.getElementById("map"), {
@@ -140,6 +160,9 @@
         let newCenter = new google.maps.LatLng(b.lat, b.lng);
         map.setCenter(newCenter);
         map.setZoom(8);
+        if(!regexLat.test(a.lat) || !regexLng.test(a.lng) || !regexLat.test(b.lat) || !regexLng.test(b.lng)){
+          alert("Invalid input make sure you follow the correct format.")
+        }
         if(a.lat > 90 || a.lat < -90 || b.lat > 90 || b.lat < -90){
           alert("lat must be between -90 and 90 degrees");
           window.location = "/";
@@ -204,9 +227,24 @@
           }
         });
       }
+      let coordInput = true;
+      function switchInput(e){
+        e.preventDefault();
+        if(coordInput){
+          document.getElementById("switch").innerText = "Switch to Coordinates";
+          document.getElementById("coordForm").style.display = "none";
+          document.getElementById("addForm").style.display = "block";
+        } else {
+          document.getElementById("switch").innerText = "Switch to Address";
+          document.getElementById("coordForm").style.display = "block";
+          document.getElementById("addForm").style.display = "none";
+        }
+        coordInput = !coordInput;
+      }
       await initMap();
-      document.getElementById("coordForm").addEventListener("submit", calcCoordinates)
-      document.getElementById("addForm").addEventListener("submit", codeAddress)
+      document.getElementById("coordForm").addEventListener("submit", calcCoordinates);
+      document.getElementById("addForm").addEventListener("submit", codeAddress);
+      document.getElementById("switchInputs").addEventListener("submit", switchInput)
       window.initMap = initMap;
     </script>
   </body>
