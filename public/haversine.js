@@ -15,6 +15,8 @@ function hav (x) {
 
 // hav(theta) = hav(bLat - aLat) + cos(aLat) * cos(bLat) * hav(bLon - aLon)
 export function haversineDistance (a, b) {
+  console.log(a);
+  console.log(b);
   const aLat = toRad(Array.isArray(a) ? a[1] : a.latitude || a.lat)
   const bLat = toRad(Array.isArray(b) ? b[1] : b.latitude || b.lat)
   const aLng = toRad(Array.isArray(a) ? a[0] : a.longitude || a.lng || a.lon)

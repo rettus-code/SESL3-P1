@@ -3,16 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
-
-    <!-- update the version number as needed -->
+    <title>Distance Calculator</title>
     <script defer src="/__/firebase/9.22.2/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
     <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
     <style media="screen">
@@ -28,6 +20,13 @@
         body, #coordinates { margin-top: 0; background: white; box-shadow: none; }
         body { border-top: 16px solid #ffa100; }
       }
+      #map {
+        height: 400px;
+        width: 400px;
+        max-width: 100vw;
+        max-height: 100vw;
+        margin:auto;
+      }
     </style>
   </head>
   <body>
@@ -36,21 +35,29 @@
       <h1>Input your coordinates in decimal form</h1>
       <form id = "coordForm">
         <p>First Coordinate</p>
-        <label for = "alatitude"></label>
-        <input type = "text" name = "alatitude" id = "alatitude" placeholder="00.0000" required>
-        <label for = "alongitude"></label>
-        <input type = "text" name = "alongitude" id = "alongitude" placeholder="000.0000" required>
+        <label for = "alat"></label>
+        <input type = "text" name = "alat" id = "alat" placeholder="00.0000" required>
+        <label for = "alon"></label>
+        <input type = "text" name = "alon" id = "alon" placeholder="000.0000" required>
         <p>Second Coordinate</p>
-        <label for = "blatitude"></label>
-        <input type = "text" name = "blatitude" id = "blatitude" placeholder="00.0000" required>
-        <label for = "blongitude"></label>
-        <input type = "text" name = "blongitude" id = "blongitude" placeholder="000.0000" required>
+        <label for = "blat"></label>
+        <input type = "text" name = "blat" id = "blat" placeholder="00.0000" required>
+        <label for = "blon"></label>
+        <input type = "text" name = "blon" id = "blon" placeholder="000.0000" required>
         <button type = "submit" id = "coordButton">Submit</button>
+      </form>
+      <form id = "addForm">
+        <label for = "address1">Put in the first address</label>
+        <input id="address1" type="textbox" name="address1">
+        <label for = "address2">Put in the second address</label>
+        <input id="address2" type="textbox" name="address2">
+        <button type = "submit" id = "addButton">Submit</button>
       </form>
       <h2>Distance in kilometers</h2>
       <input type = "text" id = "distanceField" readonly placeholder = "0">
     </div>
-
+    <div id = "map"></div>
+    <script defer src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCIdUZeSVeBOvo3pk1n7FzLUNACrvqRrSI&map_ids=6dd56c7e460c16d5&callback=initMap"></script>
     <script type = "module">
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
@@ -72,37 +79,135 @@
 
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
-
+      const { Map } = await google.maps.importLibrary("maps");
+      const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+      const directionsService = new google.maps.DirectionsService();
+      const directionsRenderer = new google.maps.DirectionsRenderer();
+      let map;
+      let markers = [];
+      let geocoder;
+      async function initMap() {
+        geocoder = new google.maps.Geocoder();
+        map = await new Map(document.getElementById("map"), {
+          center: { lat: 1, lng: 0 },
+          zoom: 1,
+          mapId: '6dd56c7e460c16d5'
+        });
+        directionsRenderer.setMap(map);
+        let infoBoxDiv = document.createElement('div');
+        makeInfoBox(infoBoxDiv);
+        map.controls[google.maps.ControlPosition.TOP_CENTER].push(infoBoxDiv);
+      }
+      function makeInfoBox(controlDiv) {
+        // Set CSS for the control border.
+        let controlUI = document.createElement('div');
+        controlUI.style.boxShadow = 'rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px';
+        controlUI.style.backgroundColor = '#fff';
+        controlUI.style.border = '2px solid #fff';
+        controlUI.style.borderRadius = '2px';
+        controlUI.style.marginBottom = '22px';
+        controlUI.style.marginTop = '10px';
+        controlUI.style.textAlign = 'center';
+        controlDiv.appendChild(controlUI);
+      }
+      function addMarker(position) {
+        const marker = new google.maps.Marker({
+          position,
+          map,
+        });
+        markers.push(marker);
+      }
+      function setMapOnAll(map) {
+        for (let i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+        }
+      }
+      function deleteMarkers() {
+        setMapOnAll(null);
+        markers = [];
+      }
       function calcCoordinates(e){
         e.preventDefault();
-        const alat = roundFourPlaces(document.getElementById("alatitude").value);
-        const alon = roundFourPlaces(document.getElementById("alongitude").value);
-        let a = { latitude: alat, longitude: alon};
-        const blat = roundFourPlaces(document.getElementById("blatitude").value);
-        const blon = roundFourPlaces(document.getElementById("blongitude").value);
-        let b = { latitude: blat, longitude: blon};
-        if(a.latitude > 90 || a.latitude < -90 || b.latitude > 90 || b.latitude < -90){
-          alert("Latitude must be between -90 and 90 degrees");
+        deleteMarkers();
+        const alat = roundFourPlaces(document.getElementById("alat").value);
+        const alon = roundFourPlaces(document.getElementById("alon").value);
+        let a = { lat: alat, lng: alon};
+        addMarker(a);
+        const blat = roundFourPlaces(document.getElementById("blat").value);
+        const blon = roundFourPlaces(document.getElementById("blon").value);
+        let b = { lat: blat, lng: blon};
+        addMarker(b);
+        let newCenter = new google.maps.LatLng(b.lat, b.lng);
+        map.setCenter(newCenter);
+        map.setZoom(8);
+        if(a.lat > 90 || a.lat < -90 || b.lat > 90 || b.lat < -90){
+          alert("lat must be between -90 and 90 degrees");
           window.location = "/";
         };
-        if(a.longitude > 180 || a.longitude < -180 || b.longitude > 180 || b.longitude < -180){
-          alert("Longitude must be between -180 and 180 degrees");
+        if(a.lng > 180 || a.lng < -180 || b.lng > 180 || b.lng < -180){
+          alert("lon must be between -180 and 180 degrees");
           window.location = "/";
         };
+        setMapOnAll(map);
         const distance = haversineDistance(a, b);
         document.getElementById("distanceField").placeholder = "" + Math.round(distance/1000);
         resetForm();
       }
       function resetForm(){
-        document.getElementById("alatitude").value = "00.0000";
-        document.getElementById("alongitude").value = "000.0000";
-        document.getElementById("blatitude").value = "00.0000";
-        document.getElementById("blongitude").value = "000.0000";
+        document.getElementById("alat").value = "";
+        document.getElementById("alon").value = "";
+        document.getElementById("blat").value = "";
+        document.getElementById("blon").value = "";
+        document.getElementById("address1").value = "";
+        document.getElementById("address2").value = "";
       }
       function roundFourPlaces(num){
         return Math.round(num * 10000)/10000;
       }
+      let addressPosition1 = {lat: 0, lng: 0};
+      let addressPosition2 = {lat: 0, lng: 0};
+      async function codeAddress(e) {
+        e.preventDefault();
+        deleteMarkers();
+        const address1 = document.getElementById('address1').value;
+        const address2 = document.getElementById('address2').value;
+        await getPoint(address1, 1);
+        await getPoint(address2, 2);
+        resetForm();
+      }
+      async function getPoint(address, alt){
+        geocoder.geocode( { 'address': address}, function(results, status) {
+          if (status == 'OK') {
+            if(alt === 1) {
+              addressPosition1.lng = roundFourPlaces((results[0].geometry.bounds.Ha.hi + results[0].geometry.bounds.Ha.lo)/2);
+              addressPosition1.lat = roundFourPlaces((results[0].geometry.bounds.Ua.hi + results[0].geometry.bounds.Ua.lo)/2);
+              addMarker(addressPosition1);
+              console.log(addressPosition1);
+            } else {
+              addressPosition2.lng = roundFourPlaces((results[0].geometry.bounds.Ha.hi + results[0].geometry.bounds.Ha.lo)/2);
+              addressPosition2.lat = roundFourPlaces((results[0].geometry.bounds.Ua.hi + results[0].geometry.bounds.Ua.lo)/2);
+              addMarker(addressPosition2);
+              console.log(addressPosition2);
+              setMapOnAll(map);
+              setTimeout(()=>{
+                const distance = haversineDistance(addressPosition1, addressPosition2);
+                document.getElementById("distanceField").placeholder = "" + Math.round(distance/1000);
+              }, "200")
+              
+              let newCenter = new google.maps.LatLng(addressPosition2.lat, addressPosition2.lng);
+              map.setCenter(newCenter);
+              map.setZoom(6);
+            }
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+            window.location = "/";
+          }
+        });
+      }
+      await initMap();
       document.getElementById("coordForm").addEventListener("submit", calcCoordinates)
+      document.getElementById("addForm").addEventListener("submit", codeAddress)
+      window.initMap = initMap;
     </script>
   </body>
 </html>
