@@ -73,6 +73,7 @@
       </form>
       <h2>Distance in kilometers</h2>
       <input type = "text" id = "distanceField" readonly placeholder = "0">
+      <div id = "coordinatesShown"></div>
     </div>
     <div id = "map"></div>
     <script defer src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCIdUZeSVeBOvo3pk1n7FzLUNACrvqRrSI&map_ids=6dd56c7e460c16d5&callback=initMap"></script>
@@ -205,6 +206,8 @@
         resetForm();
       }
       async function getPoint(address, alt){
+        const distElem = document.getElementById("coordinatesShown");
+        removeAllChildNodes(distElem)
         geocoder.geocode( { 'address': address}, function(results, status) {
           if (status == 'OK') {
             if(alt === 1) {
@@ -221,8 +224,13 @@
               setTimeout(()=>{
                 const distance = haversineDistance(addressPosition1, addressPosition2);
                 document.getElementById("distanceField").placeholder = "" + Math.round(distance/1000);
+                const add1 = document.createElement("h4");
+                add1.innerText = "Point A: " + addressPosition1.lat + ", " + addressPosition1.lng;
+                distElem.appendChild(add1);
+                const add2 = document.createElement("h4");
+                add2.innerText = "Point B: " + addressPosition2.lat + ", " + addressPosition2.lng;
+                distElem.appendChild(add2);
               }, "200")
-              
               let newCenter = new google.maps.LatLng(addressPosition2.lat, addressPosition2.lng);
               map.setCenter(newCenter);
               map.setZoom(6);
@@ -246,6 +254,11 @@
           document.getElementById("addForm").style.display = "none";
         }
         coordInput = !coordInput;
+      }
+      function removeAllChildNodes(parent) {
+        while (parent.firstChild) {
+          parent.removeChild(parent.firstChild);
+        }
       }
       await initMap();
       document.getElementById("coordForm").addEventListener("submit", calcCoordinates);
