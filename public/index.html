@@ -51,16 +51,16 @@
       </form>
       <form id = "coordForm">
         <h1>Input your coordinates in decimal form</h1>
-        <p>First Coordinate</p>
-        <label for = "alat">Lat</label>
-        <input type = "text" name = "alat" id = "alat" placeholder="00.0000" required><br>
-        <label for = "alon">Lon</label>
-        <input type = "text" name = "alon" id = "alon" placeholder="000.0000" required>
-        <p>Second Coordinate</p>
-        <label for = "blat">Lat</label>
-        <input type = "text" name = "blat" id = "blat" placeholder="00.0000" required><br>
-        <label for = "blon">Lon</label>
-        <input type = "text" name = "blon" id = "blon" placeholder="000.0000" required><br>
+        <p>Point A</p>
+        <label for = "alat">Lat/Lng</label>
+        <input type = "text" name = "alat" id = "alat" placeholder="00.0000,000.0000" required><br>
+        <!-- <label for = "alon">Lon</label>
+        <input type = "text" name = "alon" id = "alon" placeholder="000.0000" required> -->
+        <p>Point B</p>
+        <label for = "blat">Lat/Lng</label>
+        <input type = "text" name = "blat" id = "blat" placeholder="00.0000,000.0000" required><br>
+        <!-- <label for = "blon">Lon</label>
+        <input type = "text" name = "blon" id = "blon" placeholder="000.0000" required><br> -->
         <button type = "submit" id = "coordButton">Submit</button>
       </form>
       <form id = "addForm" style="display: none;">
@@ -149,12 +149,18 @@
       function calcCoordinates(e){
         e.preventDefault();
         deleteMarkers();
-        const alat = roundFourPlaces(document.getElementById("alat").value);
-        const alon = roundFourPlaces(document.getElementById("alon").value);
+        let arr = document.getElementById("alat").value.split(',').map(function (value) {
+          return value.trim();
+        });
+        const alat = roundFourPlaces(arr[0]);
+        const alon = roundFourPlaces(arr[1]);
         let a = { lat: alat, lng: alon};
         addMarker(a);
-        const blat = roundFourPlaces(document.getElementById("blat").value);
-        const blon = roundFourPlaces(document.getElementById("blon").value);
+        arr = document.getElementById("blat").value.split(',').map(function (value) {
+          return value.trim();
+        });
+        const blat = roundFourPlaces(arr[0]);
+        const blon = roundFourPlaces(arr[1]);
         let b = { lat: blat, lng: blon};
         addMarker(b);
         let newCenter = new google.maps.LatLng(b.lat, b.lng);
@@ -173,14 +179,14 @@
         };
         setMapOnAll(map);
         const distance = haversineDistance(a, b);
-        document.getElementById("distanceField").placeholder = "" + Math.round(distance/1000);
+        document.getElementById("distanceField").placeholder = "" + (Math.round(distance/10)/100) + "km";
         resetForm();
       }
       function resetForm(){
         document.getElementById("alat").value = "";
-        document.getElementById("alon").value = "";
+        //document.getElementById("alon").value = "";
         document.getElementById("blat").value = "";
-        document.getElementById("blon").value = "";
+        //document.getElementById("blon").value = "";
         document.getElementById("address1").value = "";
         document.getElementById("address2").value = "";
       }
